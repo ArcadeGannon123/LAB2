@@ -1,0 +1,135 @@
+syntax = "proto3";
+package proto;
+
+//Aqui el cliente envia a un datanode los chunks de el libro que quiere subir
+message Chunk{//
+
+    string Name = 1;//nombre del libro
+    repeated bytes Data = 16;//chunks del libro
+
+}
+
+//Aqui los datanodes distribuyen los chunk que le corresponden a cada datanode
+message ChunkDatanode{
+
+    string Name = 1;//nombre del libro
+    int32 Number =2;//numero del chunk inicial
+    repeated bytes Data = 17;//chunks
+
+}
+
+//aqui los datanodes responden a la peticion de distribucion
+message Response{
+    string Respuesta =1;
+}
+
+
+//aqui los datanodes envian los datos para registrar en el namenode
+message Registro{
+
+    string Name =1;//nombre del libro
+    int32 Nchunks =2;//numero de chunks que componen el libro
+    repeated string Chunks =16;//chunks del libro
+
+}
+
+//aqui los datanode envian las proposiciones de distirbucion a los otros datanodes
+message Propuesta{
+}
+
+//aqui los datanodes envian una proposicion de distribucion al namenode para que este la apruebe
+message PropuestaNamenode{
+
+    int32 Nchunks = 1;// numero de chunks
+    repeated int32 IDdatanode = 16;// ids de los datanodes de la distribucion
+
+}
+
+//aqui el namenode envia la proposicion de distribucion a los datanodes
+message RespuestaNamenode{
+
+    repeated int32 IDdatanode = 16;// ids de los datanodes de la distribucion
+
+}
+
+
+//aqui los datanode envian una solicitud de acceso al registro al namenode
+message Solicitud{
+
+    int32 IDNodo = 1;//id del solicitante
+
+}
+
+//aqui el namenode responde a la peticion de acceso al registro
+message ReplyNN{
+
+    string Respuesta = 1;
+
+}
+
+//aqui el datanode envia una solicitud de acceso al registro a todos los demas datanodes
+message SolicitudDistribuido{
+
+    int64 Timestamp =1;//timestamp de la peticion
+    int32 IDSolicitante =2;//id del solicitante
+}
+
+//aqui los datanodes responden a la peticion para acceder al registro
+message RespuestaDistribuido{
+
+    string respuesta = 1;
+}
+
+message Empty{}
+
+//aqui el cliente envia el nombre del libro al namenode para conocer las ubicaciones de sus chunks
+message Libro{
+
+    string Name =1;//nombre del libro
+
+}
+
+//aqui el namenode envia las ubicaciones de los chunks del libro solicitado
+message Ubicaciones{
+    repeated string Ubicacion = 16;
+}
+
+//aqui el cliente envia el nombre del chunk solicitado a un datanode
+message ChunkName{
+
+    string Name=1;
+}
+
+//aqui el datanode envia el chunk solicitado al cliente
+message Descarga{
+
+    bytes Data = 1;
+
+
+}
+
+//aqui el namenode envia la lista de libros disponibles al cliente
+message Lista{
+    repeated string Libros = 16;
+}
+
+service DataNodeService{
+
+    rpc Upload(Chunk) returns (Response);
+    rpc RecibirPropuesta(Propuesta) returns (Response);
+    rpc RecibirChunks(ChunkDatanode) returns (Empty);
+    rpc Turno(ReplyNN) returns (Empty);
+    rpc PermitirAcceso(SolicitudDistribuido) returns (RespuestaDistribuido);
+    rpc Download(ChunkName) returns (Descarga);
+}
+
+service NameNodeService{
+
+    rpc RecibirPropuesta(PropuestaNamenode) returns (RespuestaNamenode);
+    rpc SolicitarAcceso(Solicitud) returns (ReplyNN);
+    rpc RegistrarCentralizado(Registro) returns (Empty);
+    rpc SolicitarUbicaciones(Libro) returns (Ubicaciones);
+    rpc SolicitarLista(Empty) returns (Lista);
+
+
+}
